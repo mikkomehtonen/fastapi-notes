@@ -2,8 +2,8 @@ from fastapi import FastAPI, HTTPException, status
 from pathlib import Path
 import sqlite3
 from datetime import datetime, timezone
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from .models import NoteCreate, Note, NoteUpdate
 
 def get_db_connection():
     """Get a database connection to the notes database."""
@@ -33,20 +33,6 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
-
-class NoteCreate(BaseModel):
-    title: str
-    body: str
-
-class Note(BaseModel):
-    id: int
-    title: str
-    body: str
-    created_at: str
-
-class NoteUpdate(BaseModel):
-    title: str
-    body: str
 
 @app.post("/notes")
 def create_note(note: NoteCreate):
