@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from pathlib import Path
 import sqlite3
 from datetime import datetime, timezone
@@ -83,6 +83,25 @@ def get_notes():
     
     conn.close()
     return notes
+
+@app.get("/notes/{id}", response_model=Note)
+def get_note(id: int):
+    db_path = Path("data/app.db")
+    conn = sqlite3.connect(db_path)
+    
+    cursor = conn.execute("SELECT id, title, body, created_at FROM notes WHERE id = ?", (id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    
+    return {
+        "id": row[0],
+        "title": row[1],
+        "body": row[2],
+        "created_at": row[3]
+    }
 
 @app.get("/health")
 def health():

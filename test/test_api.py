@@ -20,6 +20,7 @@ def test_health():
         assert r.status_code == 200
         assert r.json() == {"ok": True}
 
+
 def test_post_and_list_roundtrip():
     with TestClient(app) as client:
         r = client.post("/notes", json={"title": "Hello", "body": "World"})
@@ -38,3 +39,28 @@ def test_post_and_list_roundtrip():
         notes = r2.json()
         assert isinstance(notes, list)
         assert any(n["id"] == created["id"] for n in notes)
+
+
+def test_get_note():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+        
+        # Retrieve the note by ID
+        r2 = client.get(f"/notes/{created_note['id']}")
+        assert r2.status_code == 200
+        retrieved_note = r2.json()
+        
+        assert retrieved_note["id"] == created_note["id"]
+        assert retrieved_note["title"] == "Test Note"
+        assert retrieved_note["body"] == "Test Body"
+        assert retrieved_note["created_at"] == created_note["created_at"]
+
+
+def test_get_note_not_found():
+    with TestClient(app) as client:
+        r = client.get("/notes/999")
+        assert r.status_code == 404
+        assert r.json() == {"detail": "Note not found"}
