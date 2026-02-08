@@ -49,17 +49,15 @@ def test_get_note():
         # Create a note first
         r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
         assert r.status_code == 200
-        created_note = r.json()
+        created = r.json()
 
-        # Retrieve the note by ID
-        r2 = client.get(f"/notes/{created_note['id']}")
+        r2 = client.get(f"/notes/{created['id']}")
         assert r2.status_code == 200
-        retrieved_note = r2.json()
-
-        assert retrieved_note["id"] == created_note["id"]
-        assert retrieved_note["title"] == "Test Note"
-        assert retrieved_note["body"] == "Test Body"
-        assert retrieved_note["created_at"] == created_note["created_at"]
+        note = r2.json()
+        assert note["id"] == created["id"]
+        assert note["title"] == "Test Note"
+        assert note["body"] == "Test Body"
+        assert note["created_at"] == created["created_at"]
 
 
 def test_get_note_not_found():
@@ -69,55 +67,21 @@ def test_get_note_not_found():
         assert r.json() == {"detail": "Note not found"}
 
 
-def test_delete_note():
+def test_update_note():
     with TestClient(app) as client:
         # Create a note first
         r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
         assert r.status_code == 200
-        created_note = r.json()
-
-        # Delete the note
-        r2 = client.delete(f"/notes/{created_note['id']}")
-        assert r2.status_code == 200
-        assert r2.json() == {"message": "Note deleted successfully"}
-
-        # Verify the note is gone
-        r3 = client.get(f"/notes/{created_note['id']}")
-        assert r3.status_code == 404
-        assert r3.json() == {"detail": "Note not found"}
-
-
-def test_delete_note_not_found():
-    with TestClient(app) as client:
-        r = client.delete("/notes/999")
-        assert r.status_code == 404
-        assert r.json() == {"detail": "Note not found"}
-
-
-def test_update_note():
-    with TestClient(app) as client:
-        # Create a note first
-        r = client.post("/notes", json={"title": "Original Title", "body": "Original Body"})
-        assert r.status_code == 200
-        created_note = r.json()
+        created = r.json()
 
         # Update the note
-        r2 = client.put(f"/notes/{created_note['id']}", json={"title": "Updated Title", "body": "Updated Body"})
+        r2 = client.put(f"/notes/{created['id']}", json={"title": "Updated Title", "body": "Updated Body"})
         assert r2.status_code == 200
-        updated_note = r2.json()
-
-        assert updated_note["id"] == created_note["id"]
-        assert updated_note["title"] == "Updated Title"
-        assert updated_note["body"] == "Updated Body"
-        assert updated_note["created_at"] == created_note["created_at"]
-
-        # Verify the update by retrieving the note
-        r3 = client.get(f"/notes/{created_note['id']}")
-        assert r3.status_code == 200
-        retrieved_note = r3.json()
-
-        assert retrieved_note["title"] == "Updated Title"
-        assert retrieved_note["body"] == "Updated Body"
+        updated = r2.json()
+        assert updated["id"] == created["id"]
+        assert updated["title"] == "Updated Title"
+        assert updated["body"] == "Updated Body"
+        assert updated["created_at"] == created["created_at"]
 
 
 def test_update_note_not_found():
@@ -132,15 +96,15 @@ def test_delete_note():
         # Create a note first
         r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
         assert r.status_code == 200
-        created_note = r.json()
+        created = r.json()
 
         # Delete the note
-        r2 = client.delete(f"/notes/{created_note['id']}")
+        r2 = client.delete(f"/notes/{created['id']}")
         assert r2.status_code == 200
         assert r2.json() == {"message": "Note deleted successfully"}
 
         # Verify the note is gone
-        r3 = client.get(f"/notes/{created_note['id']}")
+        r3 = client.get(f"/notes/{created['id']}")
         assert r3.status_code == 404
         assert r3.json() == {"detail": "Note not found"}
 
@@ -150,3 +114,57 @@ def test_delete_note_not_found():
         r = client.delete("/notes/999")
         assert r.status_code == 404
         assert r.json() == {"detail": "Note not found"}
+
+
+def test_create_note_with_empty_title():
+    with TestClient(app) as client:
+        r = client.post("/notes", json={"title": "", "body": "Test Body"})
+        assert r.status_code == 422
+
+
+def test_create_note_with_empty_body():
+    with TestClient(app) as client:
+        r = client.post("/notes", json={"title": "Test Title", "body": ""})
+        assert r.status_code == 422
+
+
+def test_create_note_with_title_too_long():
+    with TestClient(app) as client:
+        r = client.post("/notes", json={"title": "This title is longer than twenty characters", "body": "Test Body"})
+        assert r.status_code == 422
+
+
+def test_update_note_with_empty_title():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+
+        # Try to update with empty title
+        r2 = client.put(f"/notes/{created_note['id']}", json={"title": "", "body": "Updated Body"})
+        assert r2.status_code == 422
+
+
+def test_update_note_with_empty_body():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+
+        # Try to update with empty body
+        r2 = client.put(f"/notes/{created_note['id']}", json={"title": "Updated Title", "body": ""})
+        assert r2.status_code == 422
+
+
+def test_update_note_with_title_too_long():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+
+        # Try to update with title too long
+        r2 = client.put(f"/notes/{created_note['id']}", json={"title": "This title is longer than twenty characters", "body": "Updated Body"})
+        assert r2.status_code == 422

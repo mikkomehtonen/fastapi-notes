@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class NoteCreate(BaseModel):
-    title: str
-    body: str
+    title: str = Field(..., min_length=1, max_length=20)
+    body: str = Field(..., min_length=1)
 
 class Note(BaseModel):
     id: int
@@ -11,5 +11,5 @@ class Note(BaseModel):
     created_at: str
 
 class NoteUpdate(BaseModel):
-    title: str
-    body: str
+    title: str = Field(..., min_length=1, max_length=20)
+    body: str = Field(..., min_length=1)
