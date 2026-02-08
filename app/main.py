@@ -48,7 +48,7 @@ async def read_demo(request: Request):
 @app.post("/notes")
 def create_note(note: NoteCreate):
     # Get current UTC time in ISO-8601 format without microseconds
-    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat() + "Z"
+    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
     # Insert note into database
     conn = get_db_connection()

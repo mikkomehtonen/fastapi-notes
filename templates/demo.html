@@ -137,11 +137,6 @@
 
         // Format date in a user-friendly way
         function formatDate(iso) {
-            // Strip any extra "Z" at the end if present (backend issue)
-            if (iso && iso.endsWith('Z')) {
-                iso = iso.slice(0, -1);
-            }
-            
             const d = new Date(iso);
             return Number.isNaN(d.getTime())
                 ? iso
