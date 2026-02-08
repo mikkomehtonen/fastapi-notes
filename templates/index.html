@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notes App</title>
+</head>
+<body>
+    <h1>Notes</h1>
+    <button id="load-notes">Load notes</button>
+    <ul id="notes"></ul>
+
+    <script>
+        document.getElementById('load-notes').addEventListener('click', function() {
+            fetch('/notes')
+                .then(response => response.json())
+                .then(notes => {
+                    const notesList = document.getElementById('notes');
+                    notesList.innerHTML = '';
+                    
+                    notes.forEach(note => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <strong>ID:</strong> ${note.id}<br>
+                            <strong>Title:</strong> ${note.title}<br>
+                            <strong>Body:</strong> ${note.body}<br>
+                            <strong>Created At:</strong> ${note.created_at}<br><br>
+                        `;
+                        notesList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading notes:', error);
+                });
+        });
+    </script>
+</body>
+</html>

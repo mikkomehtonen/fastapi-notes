@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
 from pathlib import Path
 import sqlite3
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from .models import NoteCreate, Note, NoteUpdate
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 
 def get_db_connection():
     """Get a database connection to the notes database."""
@@ -33,6 +35,11 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/notes")
 def create_note(note: NoteCreate):
