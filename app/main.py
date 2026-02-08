@@ -10,6 +10,12 @@ class NoteCreate(BaseModel):
     title: str
     body: str
 
+class Note(BaseModel):
+    id: int
+    title: str
+    body: str
+    created_at: str
+
 @app.on_event("startup")
 def startup():
     # Create database directory if it doesn't exist
@@ -56,6 +62,24 @@ def create_note(note: NoteCreate):
         "body": note.body,
         "created_at": created_at
     }
+
+@app.get("/notes", response_model=list[Note])
+def get_notes():
+    db_path = Path("data/app.db")
+    conn = sqlite3.connect(db_path)
+    
+    cursor = conn.execute("SELECT id, title, body, created_at FROM notes ORDER BY id DESC")
+    notes = []
+    for row in cursor.fetchall():
+        notes.append({
+            "id": row[0],
+            "title": row[1],
+            "body": row[2],
+            "created_at": row[3]
+        })
+    
+    conn.close()
+    return notes
 
 @app.get("/health")
 def health():
