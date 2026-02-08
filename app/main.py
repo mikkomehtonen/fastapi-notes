@@ -1,23 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from pathlib import Path
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel
+from contextlib import asynccontextmanager
 
-app = FastAPI()
-
-class NoteCreate(BaseModel):
-    title: str
-    body: str
-
-class Note(BaseModel):
-    id: int
-    title: str
-    body: str
-    created_at: str
-
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     # Create database directory if it doesn't exist
     Path("data").mkdir(exist_ok=True)
     
@@ -36,11 +25,25 @@ def startup():
     
     conn.commit()
     conn.close()
+    
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+class NoteCreate(BaseModel):
+    title: str
+    body: str
+
+class Note(BaseModel):
+    id: int
+    title: str
+    body: str
+    created_at: str
 
 @app.post("/notes")
 def create_note(note: NoteCreate):
     # Get current UTC time in ISO-8601 format without microseconds
-    created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat() + "Z"
     
     # Insert note into database
     db_path = Path("data/app.db")
