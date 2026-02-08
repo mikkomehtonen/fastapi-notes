@@ -92,3 +92,61 @@ def test_delete_note_not_found():
         r = client.delete("/notes/999")
         assert r.status_code == 404
         assert r.json() == {"detail": "Note not found"}
+
+
+def test_update_note():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Original Title", "body": "Original Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+
+        # Update the note
+        r2 = client.put(f"/notes/{created_note['id']}", json={"title": "Updated Title", "body": "Updated Body"})
+        assert r2.status_code == 200
+        updated_note = r2.json()
+
+        assert updated_note["id"] == created_note["id"]
+        assert updated_note["title"] == "Updated Title"
+        assert updated_note["body"] == "Updated Body"
+        assert updated_note["created_at"] == created_note["created_at"]
+
+        # Verify the update by retrieving the note
+        r3 = client.get(f"/notes/{created_note['id']}")
+        assert r3.status_code == 200
+        retrieved_note = r3.json()
+
+        assert retrieved_note["title"] == "Updated Title"
+        assert retrieved_note["body"] == "Updated Body"
+
+
+def test_update_note_not_found():
+    with TestClient(app) as client:
+        r = client.put("/notes/999", json={"title": "Updated Title", "body": "Updated Body"})
+        assert r.status_code == 404
+        assert r.json() == {"detail": "Note not found"}
+
+
+def test_delete_note():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+
+        # Delete the note
+        r2 = client.delete(f"/notes/{created_note['id']}")
+        assert r2.status_code == 200
+        assert r2.json() == {"message": "Note deleted successfully"}
+
+        # Verify the note is gone
+        r3 = client.get(f"/notes/{created_note['id']}")
+        assert r3.status_code == 404
+        assert r3.json() == {"detail": "Note not found"}
+
+
+def test_delete_note_not_found():
+    with TestClient(app) as client:
+        r = client.delete("/notes/999")
+        assert r.status_code == 404
+        assert r.json() == {"detail": "Note not found"}

@@ -44,6 +44,10 @@ class Note(BaseModel):
     body: str
     created_at: str
 
+class NoteUpdate(BaseModel):
+    title: str
+    body: str
+
 @app.post("/notes")
 def create_note(note: NoteCreate):
     # Get current UTC time in ISO-8601 format without microseconds
@@ -90,6 +94,36 @@ def get_notes():
 def get_note(id: int):
     conn = get_db_connection()
 
+    cursor = conn.execute("SELECT id, title, body, created_at FROM notes WHERE id = ?", (id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+
+    return {
+        "id": row[0],
+        "title": row[1],
+        "body": row[2],
+        "created_at": row[3]
+    }
+
+@app.put("/notes/{id}", response_model=Note)
+def update_note(id: int, note_update: NoteUpdate):
+    conn = get_db_connection()
+
+    cursor = conn.execute(
+        "UPDATE notes SET title = ?, body = ? WHERE id = ?",
+        (note_update.title, note_update.body, id)
+    )
+    conn.commit()
+    conn.close()
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+
+    # Retrieve the updated note
+    conn = get_db_connection()
     cursor = conn.execute("SELECT id, title, body, created_at FROM notes WHERE id = ?", (id,))
     row = cursor.fetchone()
     conn.close()
