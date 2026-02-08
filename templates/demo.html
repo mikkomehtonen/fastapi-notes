@@ -135,33 +135,31 @@
                 });
         }
 
+        // Format date in a user-friendly way
+        function formatDate(iso) {
+            // Strip any extra "Z" at the end if present (backend issue)
+            if (iso && iso.endsWith('Z')) {
+                iso = iso.slice(0, -1);
+            }
+            
+            const d = new Date(iso);
+            return Number.isNaN(d.getTime())
+                ? iso
+                : d.toLocaleString("fi-FI", { dateStyle: "medium", timeStyle: "short" });
+        }
+
         // Create a note card element
         function createNoteCard(note) {
             const card = document.createElement('div');
             card.className = 'bg-card rounded-xl shadow-md border border-gray-100 overflow-hidden transition duration-200 hover:shadow-lg';
             
-            // Use a simple, fail-safe date format
-            let formattedDate = note.created_at || 'Unknown';
+            // Format the date using our friendly function
+            const formattedDate = formatDate(note.created_at) || 'Unknown';
             
-            // Simple, robust date parsing (handles format issues gracefully)
-            try {
-                if (note.created_at && typeof note.created_at === 'string' && note.created_at.length > 10) {
-                    // Direct parse attempt - if this fails, we keep original raw date
-                    const date = new Date(note.created_at);
-                    if (!isNaN(date.getTime())) {
-                        formattedDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    }
-                }
-            } catch (e) {
-                // If anything fails during date parsing, just keep the raw date
-                console.log('Date parsing failed for:', note.created_at);
-            }
+            // Store note data as dataset attributes
+            card.dataset.noteId = note.id;
+            card.dataset.noteTitle = note.title;
+            card.dataset.noteBody = note.body;
             
             card.innerHTML = `
                 <div class="p-6">
@@ -173,7 +171,7 @@
                         <span>${formattedDate}</span>
                         <div class="space-x-2">
                             <button 
-                                onclick="editNote(${note.id}, '${note.title}', '${note.body}')"
+                                onclick="editNote(${note.id})"
                                 class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition duration-200"
                             >
                                 Edit
@@ -192,37 +190,89 @@
             return card;
         }
 
-        // Edit a note
-        function editNote(id, title, body) {
-            // Simple prompt-based editing (in a real app, you might want a more sophisticated modal)
-            const newTitle = prompt('Edit title:', title);
-            const newBody = prompt('Edit body:', body);
+        // Edit a note inline
+        function editNote(id) {
+            const noteCard = document.querySelector(`[data-note-id="${id}"]`);
+            if (!noteCard) return;
             
-            if (newTitle !== null && newBody !== null) {
-                const noteData = {
-                    title: newTitle,
-                    body: newBody
-                };
-                
-                fetch(`/notes/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(noteData)
-                })
-                .then(response => {
-                    if (response.ok) {
-                        // Refresh the notes list to show updated note
-                        loadNotes();
-                    } else {
-                        console.error('Failed to update note');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating note:', error);
-                });
-            }
+            // Get the note data
+            const title = noteCard.dataset.noteTitle;
+            const body = noteCard.dataset.noteBody;
+            
+            // Replace the note content with edit form
+            noteCard.innerHTML = `
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-3">
+                        <input 
+                            type="text" 
+                            id="edit-title-${id}" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent mb-3"
+                            value="${title}"
+                        >
+                    </div>
+                    <textarea 
+                        id="edit-body-${id}" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent mb-4"
+                        rows="3"
+                    >${body}</textarea>
+                    <div class="flex justify-between items-center text-sm text-gray-500">
+                        <span></span>
+                        <div class="space-x-2">
+                            <button 
+                                onclick="saveEdit(${id})"
+                                class="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition duration-200"
+                            >
+                                Save
+                            </button>
+                            <button 
+                                onclick="cancelEdit(${id})"
+                                class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition duration-200"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Save edited note
+        function saveEdit(id) {
+            const noteCard = document.querySelector(`[data-note-id="${id}"]`);
+            if (!noteCard) return;
+            
+            const newTitle = document.getElementById(`edit-title-${id}`).value;
+            const newBody = document.getElementById(`edit-body-${id}`).value;
+            
+            const noteData = {
+                title: newTitle,
+                body: newBody
+            };
+            
+            fetch(`/notes/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(noteData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Refresh the notes list to show updated note
+                    loadNotes();
+                } else {
+                    console.error('Failed to update note');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating note:', error);
+            });
+        }
+
+        // Cancel edit and restore original note
+        function cancelEdit(id) {
+            // Simple refresh to restore original note
+            loadNotes();
         }
 
         // Delete a note
