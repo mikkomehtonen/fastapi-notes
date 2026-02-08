@@ -41,6 +41,10 @@ templates = Jinja2Templates(directory="templates")
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/demo", response_class=HTMLResponse)
+async def read_demo(request: Request):
+    return templates.TemplateResponse("demo.html", {"request": request})
+
 @app.post("/notes")
 def create_note(note: NoteCreate):
     # Get current UTC time in ISO-8601 format without microseconds
