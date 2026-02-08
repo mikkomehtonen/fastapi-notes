@@ -162,9 +162,19 @@
                         return;
                     }
                     
-                    notes.forEach(note => {
+                    // Add fade-in animation class to notes
+                    notes.forEach((note, index) => {
                         const noteCard = createNoteCard(note);
+                        noteCard.style.opacity = '0';
+                        noteCard.style.transform = 'translateY(10px)';
                         container.appendChild(noteCard);
+                        
+                        // Trigger animation with small delay for staggered effect
+                        setTimeout(() => {
+                            noteCard.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                            noteCard.style.opacity = '1';
+                            noteCard.style.transform = 'translateY(0)';
+                        }, 50 * index);
                     });
                 })
                 .catch(error => {
@@ -196,7 +206,7 @@
             card.dataset.noteBody = note.body;
             
              card.innerHTML = `
-                 <div class="p-6">
+                 <div class="p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
                      <div class="flex justify-between items-start mb-3">
                          <h3 class="text-lg font-semibold text-gray-800">${note.title}</h3>
                      </div>
