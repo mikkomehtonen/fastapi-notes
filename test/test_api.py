@@ -1,3 +1,6 @@
+import sys
+import os
+
 from pathlib import Path
 
 import pytest
@@ -47,12 +50,12 @@ def test_get_note():
         r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
         assert r.status_code == 200
         created_note = r.json()
-        
+
         # Retrieve the note by ID
         r2 = client.get(f"/notes/{created_note['id']}")
         assert r2.status_code == 200
         retrieved_note = r2.json()
-        
+
         assert retrieved_note["id"] == created_note["id"]
         assert retrieved_note["title"] == "Test Note"
         assert retrieved_note["body"] == "Test Body"
@@ -62,5 +65,30 @@ def test_get_note():
 def test_get_note_not_found():
     with TestClient(app) as client:
         r = client.get("/notes/999")
+        assert r.status_code == 404
+        assert r.json() == {"detail": "Note not found"}
+
+
+def test_delete_note():
+    with TestClient(app) as client:
+        # Create a note first
+        r = client.post("/notes", json={"title": "Test Note", "body": "Test Body"})
+        assert r.status_code == 200
+        created_note = r.json()
+
+        # Delete the note
+        r2 = client.delete(f"/notes/{created_note['id']}")
+        assert r2.status_code == 200
+        assert r2.json() == {"message": "Note deleted successfully"}
+
+        # Verify the note is gone
+        r3 = client.get(f"/notes/{created_note['id']}")
+        assert r3.status_code == 404
+        assert r3.json() == {"detail": "Note not found"}
+
+
+def test_delete_note_not_found():
+    with TestClient(app) as client:
+        r = client.delete("/notes/999")
         assert r.status_code == 404
         assert r.json() == {"detail": "Note not found"}

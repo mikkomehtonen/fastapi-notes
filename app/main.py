@@ -104,6 +104,19 @@ def get_note(id: int):
         "created_at": row[3]
     }
 
+@app.delete("/notes/{id}")
+def delete_note(id: int):
+    conn = get_db_connection()
+
+    cursor = conn.execute("DELETE FROM notes WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+
+    return {"message": "Note deleted successfully"}
+
 @app.get("/health")
 def health():
     return {"ok": True}
