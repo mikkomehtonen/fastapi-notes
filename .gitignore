@@ -62,3 +62,5 @@ ENV/
 
 # Data directory (contains database)
 data/
+
+.coverage
