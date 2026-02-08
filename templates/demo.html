@@ -309,7 +309,7 @@
             loadNotes();
         }
 
-        // Delete a note
+         // Delete a note
         function deleteNote(id) {
             if (confirm('Are you sure you want to delete this note?')) {
                 fetch(`/notes/${id}`, {
@@ -317,11 +317,8 @@
                 })
                 .then(response => {
                     if (response.ok) {
-                        // Remove the card from UI
-                        const card = document.querySelector(`[onclick="deleteNote(${id})"]`).closest('.rounded-xl');
-                        if (card) {
-                            card.remove();
-                        }
+                        // Refresh the notes list to show updated note
+                        loadNotes();
                     } else {
                         console.error('Failed to delete note');
                     }
