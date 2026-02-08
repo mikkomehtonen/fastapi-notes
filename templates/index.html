@@ -6,6 +6,20 @@
 <body>
     <h1>Notes</h1>
     <button id="load-notes">Load notes</button>
+    
+    <h2>Create New Note</h2>
+    <form id="note-form">
+        <div>
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div>
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required></textarea>
+        </div>
+        <button type="submit">Create Note</button>
+    </form>
+    
     <ul id="notes"></ul>
 
     <script>
@@ -22,7 +36,8 @@
                             <strong>ID:</strong> ${note.id}<br>
                             <strong>Title:</strong> ${note.title}<br>
                             <strong>Body:</strong> ${note.body}<br>
-                            <strong>Created At:</strong> ${note.created_at}<br><br>
+                            <strong>Created At:</strong> ${note.created_at}<br>
+                            <button onclick="deleteNote(${note.id})">Delete</button><br><br>
                         `;
                         notesList.appendChild(li);
                     });
@@ -31,6 +46,56 @@
                     console.error('Error loading notes:', error);
                 });
         });
+
+        document.getElementById('note-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const noteData = {
+                title: formData.get('title'),
+                body: formData.get('body')
+            };
+            
+            fetch('/notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(noteData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Clear the form
+                    document.getElementById('note-form').reset();
+                    // Refresh the notes list
+                    document.getElementById('load-notes').click();
+                } else {
+                    console.error('Failed to create note');
+                }
+            })
+            .catch(error => {
+                console.error('Error creating note:', error);
+            });
+        });
+
+        function deleteNote(id) {
+            if (confirm('Are you sure you want to delete this note?')) {
+                fetch(`/notes/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Refresh the notes list after deletion
+                        document.getElementById('load-notes').click();
+                    } else {
+                        console.error('Failed to delete note');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting note:', error);
+                });
+            }
+        }
     </script>
 </body>
 </html>
