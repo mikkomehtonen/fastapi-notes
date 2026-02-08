@@ -2,8 +2,13 @@ from fastapi import FastAPI, HTTPException
 from pathlib import Path
 import sqlite3
 from datetime import datetime
+from pydantic import BaseModel
 
 app = FastAPI()
+
+class NoteCreate(BaseModel):
+    title: str
+    body: str
 
 @app.on_event("startup")
 def startup():
@@ -27,12 +32,7 @@ def startup():
     conn.close()
 
 @app.post("/notes")
-def create_note(title: str, body: str):
-    if not title or not isinstance(title, str):
-        raise HTTPException(status_code=422, detail="Title is required and must be a non-empty string")
-    if not body or not isinstance(body, str):
-        raise HTTPException(status_code=422, detail="Body is required and must be a non-empty string")
-    
+def create_note(note: NoteCreate):
     # Get current UTC time in ISO-8601 format without microseconds
     created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     
@@ -42,7 +42,7 @@ def create_note(title: str, body: str):
     
     cursor = conn.execute(
         "INSERT INTO notes (title, body, created_at) VALUES (?, ?, ?)",
-        (title, body, created_at)
+        (note.title, note.body, created_at)
     )
     
     note_id = cursor.lastrowid
@@ -52,8 +52,8 @@ def create_note(title: str, body: str):
     # Return the created note
     return {
         "id": note_id,
-        "title": title,
-        "body": body,
+        "title": note.title,
+        "body": note.body,
         "created_at": created_at
     }
 
