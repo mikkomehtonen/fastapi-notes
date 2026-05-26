@@ -39,11 +39,11 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html", {})
 
 @app.get("/demo", response_class=HTMLResponse)
 async def read_demo(request: Request):
-    return templates.TemplateResponse("demo.html", {"request": request})
+    return templates.TemplateResponse(request, "demo.html", {})
 
 @app.post("/notes")
 def create_note(note: NoteCreate):
