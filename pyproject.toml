@@ -15,3 +15,6 @@ test = [
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+
+[tool.setuptools]
+packages = ["app"]
